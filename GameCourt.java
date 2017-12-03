@@ -138,54 +138,49 @@ public class GameCourt extends JPanel {
         // creates border around the court area, JComponent method
         setBorder(BorderFactory.createEtchedBorder(Color.GREEN, Color.BLUE));
 
-        // The timer is an object which triggers an action periodically
-        // with the given INTERVAL. One registers an ActionListener with
-        // this timer, whose actionPerformed() method will be called
-        // each time the timer triggers. We define a helper method
-        // called tick() that actually does everything that should
-        // be done in a single timestep.
+        //timer to drop the block and advance the timestep
         dropTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                dropTick();
+                if (!saveWaitTimer.isRunning())
+                    dropTick();
             }
         });
-        dropTimer.start(); // MAKE SURE TO START THE TIMER!
+        dropTimer.start();
 
+        // timer that waits before saving the block once its on the ground
         saveWaitTimer = new Timer(200, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (grid.dropCheckCollisions(block)) {
+                if (grid.dropCheckCollisions(block))
                     savePieces();
-                }
-                saveWaitTimer.stop();
-                dropTimer.start();
-                dropTimer.setDelay(dropInterval);
-                saveWaitTimer.setDelay(dropInterval / 2);
+
             }
         });
+        saveWaitTimer.setRepeats(false);
 
         setFocusable(true);
 
-        // This key listener allows the square to move as long
-        // as an arrow key is pressed, by changing the square's
-        // velocity accordingly. (The tick method below actually
-        // moves the square.)
+        
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
 
+                // goes back to mainMenu
                 case KeyEvent.VK_Q:
                     endGame();
                     break;
+                    // pauses the game
                 case KeyEvent.VK_P:
                     playing = !playing;
                     break;
 
+                    // exits program
                 case KeyEvent.VK_ESCAPE:
                     System.exit(0);
 
+                    // resets current game
                 case KeyEvent.VK_R:
                     reset();
                 }
@@ -193,7 +188,6 @@ public class GameCourt extends JPanel {
                 if (playing) {
 
                     switch (e.getKeyCode()) {
-
                     case KeyEvent.VK_LEFT:
                         move(Direction.LEFT);
                         break;
@@ -201,23 +195,28 @@ public class GameCourt extends JPanel {
                     case KeyEvent.VK_RIGHT:
                         move(Direction.RIGHT);
                         break;
-
+                        
+                        // speeds up drop timer to make block fall faster
                     case KeyEvent.VK_DOWN:
                         if (dropTimer.getInitialDelay() < 200) {
                             dropInterval = dropTimer.getInitialDelay() / 5;
                         } else {
                             dropInterval = 100;
                         }
-                        dropTimer.setDelay(dropInterval);
-                        saveWaitTimer.setDelay(dropInterval / 2);
+                        if (dropTimer.getDelay() == dropTimer.getInitialDelay()) {
+                            dropTick();
+                            dropTimer.setDelay(dropInterval);
+                            saveWaitTimer.setDelay(dropInterval / 2);
+                        }
                         break;
 
+                        // drops block immediately
                     case KeyEvent.VK_SPACE:
-                        score += block.hardDrop(grid);
-                        dropTimer.stop();
+                        score += block.hardDrop();
                         saveWaitTimer.start();
                         break;
-                        
+
+                        // rotates block
                     case KeyEvent.VK_UP:
                     case KeyEvent.VK_X:
                         block.rotate(Block.Direction.CW);
@@ -227,6 +226,7 @@ public class GameCourt extends JPanel {
                         block.rotate(Block.Direction.CCW);
                         break;
 
+                        // swaps block with next block
                     case KeyEvent.VK_C:
                         swapBlock();
                         break;
@@ -257,10 +257,11 @@ public class GameCourt extends JPanel {
         this.add(game_over);
     }
 
+    // goes back to main menu
     private void endGame() {
         buttons.setVisible(true);
         playing = false;
-        setVisible(true);
+        setVisible(false);
         info_panel.setVisible(false);
     }
 
@@ -268,10 +269,9 @@ public class GameCourt extends JPanel {
      * (Re-)set the game to its initial state.
      */
     public void reset() {
+        grid = new Grid();
         nextBlock = newBlock();
         advanceBlock();
-
-        grid = new Grid();
 
         score = 0;
         setLevel(initialLevel);
@@ -285,6 +285,7 @@ public class GameCourt extends JPanel {
         requestFocusInWindow();
     }
 
+    // replaces block with nextblock and updates nextBlockWindow
     private void advanceBlock() {
         block = nextBlock;
         if (grid.dropCheckCollisions(block)) {
@@ -298,14 +299,28 @@ public class GameCourt extends JPanel {
         repaint();
     }
 
+    // swaps next block with current block
     private void swapBlock() {
         Block old = new Block(block);
         Block next = new Block(nextBlock);
-
+        
+        if (next.squareBlock) {
+            next = new SquareBlock(grid);
+        } else if (next.longBlock) {
+            next = new IBlock(grid);
+        }
+        
         next.setPosition(block.getOrigin());
 
         if (grid.checkCollisions(next)) {
-            return;
+            next.moveLeft();
+            if (grid.checkCollisions(next)) {
+                next.undoMove();
+                next.moveRight();
+                if (grid.checkCollisions(next)) {
+                    return;
+                }
+            }
         }
 
         old.resetPosition();
@@ -314,6 +329,7 @@ public class GameCourt extends JPanel {
         blockWindow.updateNextBlock();
     }
 
+    // returns random new block
     private Block newBlock() {
         int choice = (int)Math.ceil(Math.random() * 7);
 
@@ -336,11 +352,12 @@ public class GameCourt extends JPanel {
         }
     }
 
+    // saves block in its current location, advances level if 10 lines have been cleared
     private void savePieces() {
         while (grid.checkCollisions(block)) {
             block.undoMove();
         }
-        
+
         for (Piece p: block.getPieces()) {
             grid.add(p);
             if (p.yPos == 1) {
@@ -354,9 +371,9 @@ public class GameCourt extends JPanel {
         int currentLines = grid.clearLineCheck(this);
         linesCleared += (currentLines);
         lines_label.setText("Lines Cleared: " + linesCleared);
-        lineScore(currentLines);
+        score += lineScore(currentLines);
 
-        if (linesCleared >= (level + 1 - initialLevel)) {
+        if (linesCleared / 10 >= (level + 1 - initialLevel)) {
             level ++;
             level_label.setText("Level: " + level);
 
@@ -384,13 +401,12 @@ public class GameCourt extends JPanel {
             }
             block.drop();
             if (grid.dropCheckCollisions(block)) {
-                dropTimer.stop();
                 saveWaitTimer.start();
             }
             score_label.setText("Score: " + score);
             score_label.repaint();
             // update the display
-            repaint();            
+            repaint();
         }
     }
 
@@ -398,16 +414,21 @@ public class GameCourt extends JPanel {
         return nextBlock;
     }
 
-    public void lineScore(int linesCleared) {
+    // returns the points scored for a given lines cleared
+    public int lineScore(int linesCleared) {
         int newScore = 0;
         switch(linesCleared) {
         case 1: newScore = 40 * level;
+        break;
         case 2: newScore = 100 * level;
+        break;
         case 3: newScore = 300 * level;
+        break;
         case 4: newScore = 1200 * level;
+        break;
         }
 
-        score += newScore;
+        return newScore;
     }
 
     private enum Direction {
@@ -421,15 +442,18 @@ public class GameCourt extends JPanel {
         else
             block.moveRight();
 
-        if (grid.checkCollisions(block)) {
-            block.undoMove();
-        }
+        if (grid.checkCollisions(block))
+            block.undoMove(); 
+        else if (grid.dropCheckCollisions(block))
+            saveWaitTimer.start();
     }
 
+    // initializes grid with garbage
     public void garbage(int lines) {
         grid.generateGarbage(lines);
     }
 
+    // sets the game level to a specified integer
     public void setLevel(int l) {
         level = l;
         initialLevel = l;
@@ -449,7 +473,7 @@ public class GameCourt extends JPanel {
         super.paintComponent(g);
 
         if (shadow)
-            (new BlockShadow(block, grid)).draw(g);
+            (new BlockShadow(block)).draw(g);
 
         grid.draw(g);
         block.draw(g);

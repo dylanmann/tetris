@@ -15,24 +15,28 @@ import java.util.List;
  * initial: list of initial state of pieces
  */
 public class Block {
-    
+    protected boolean squareBlock;
+    protected boolean longBlock;
     protected Grid gameGrid;            // Grid object for static pieces
     protected List<Piece> pieces;       // list of pieces in block
     protected List<Piece> initial;      // list of initial position of block
-    
-    
+
+
     public Block(Grid g) {
         pieces = new LinkedList<>();
         gameGrid = g;
         initial = new LinkedList<>();
+        squareBlock = false;
+        longBlock = false;
     }
-    
+
     public Block(Block b) {
         pieces = new LinkedList<>();
         initial = b.initial;
         resetPosition();
         gameGrid = b.gameGrid;      
-
+        squareBlock = b.squareBlock;
+        longBlock = b.longBlock;
     }
 
     // returns the location center of the block
@@ -46,11 +50,11 @@ public class Block {
             pieces.add(new Piece(p));
         }
     }
-    
+
     public enum Direction {
         CW, CCW
     }
-    
+
     // rotates a block using a rotation matrix
     protected void rotatePieces(Direction d) {
         int[] origin = getOrigin();
@@ -73,6 +77,8 @@ public class Block {
 
     // rotates with wall kicks.  moves it in all directions hoping for a success
     public void rotate(Direction d) {
+        if (squareBlock)
+            return;
         rotatePieces(d);
         if (gameGrid.checkCollisions(this)) {
             moveLeft();
@@ -124,23 +130,23 @@ public class Block {
     }
 
     // drops block to as far as it can go
-    public int hardDrop(Grid g) {
+    public int hardDrop() {
         int score = 0;
-        while (!g.dropCheckCollisions(this)) {
+        while (!gameGrid.dropCheckCollisions(this)) {
             score += 2;
             drop();
         }
         return score;
     }
-    
-    // sets position of block, used for swap block mostly
+
+    // sets position of block, used for swap block and BlockShadow mostly
     public void setPosition(int[] pos) {        
         if (pos == null || pos.length != 2)
             return;
-        
+
         int x = pos[0] - getOrigin()[0];
         int y = pos[1] - getOrigin()[1];
-        
+
         if (y == -1)
             y = 0;
 

@@ -6,11 +6,12 @@ public class IBlock extends Block {
 
     public IBlock(Grid g) {
         super(g);
+        pieces.add(new Piece(Grid.WIDTH / 2 - 2, 0, Color.RED));
+        pieces.add(new Piece(Grid.WIDTH / 2 - 1, 0, Color.RED));
         pieces.add(new Piece(Grid.WIDTH / 2, 0, Color.RED));
-        pieces.add(new Piece(Grid.WIDTH / 2, 1, Color.RED));
-        pieces.add(new Piece(Grid.WIDTH / 2, 2, Color.RED));
-        pieces.add(new Piece(Grid.WIDTH / 2, 3, Color.RED));
+        pieces.add(new Piece(Grid.WIDTH / 2 + 1, 0, Color.RED));
 
+        longBlock = true;
         initial = new LinkedList<>();
         for (Piece p: pieces) {
             initial.add(new Piece(p));

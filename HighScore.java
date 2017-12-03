@@ -59,7 +59,7 @@ public final class HighScore {
         nameField = new JTextField("InputName");
         nameFrame = new JFrame();
         
-        nameField.setFont(new Font("Calibri", Font.PLAIN, 20));
+        nameField.setFont(new Font("Open Sans", Font.PLAIN, 20));
 
         nameFrame.add(nameField, BorderLayout.CENTER);
 

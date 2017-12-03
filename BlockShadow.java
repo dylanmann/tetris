@@ -12,21 +12,15 @@ import java.util.LinkedList;
 public class BlockShadow extends Block {
     
     
-    public BlockShadow(Block b, Grid grid) {
+    public BlockShadow(Block b) {
         super(b);
         pieces = new LinkedList<>();
         for (Piece p: b.pieces) {
-            pieces.add(new Piece(p.xPos, p.yPos, new Color(220, 220, 220)));
+            pieces.add(new Piece(p.xPos, p.yPos, new Color(80, 80, 80)));
         }
-        
         this.setPosition(b.getOrigin());
-        
-        while (!grid.checkCollisions(this)) {
-            drop();
-        }
-        undoMove();
+        this.hardDrop();
     }
-
     
     public void updateShadow(Block b) {
 

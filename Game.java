@@ -14,7 +14,6 @@ import java.util.LinkedList;
 
 import javax.sound.sampled.*;
 import javax.swing.*;
-import javax.swing.plaf.SpinnerUI;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -30,7 +29,7 @@ public class Game implements Runnable {
         // Top-level frame in which game components live
         // Be sure to change "TOP LEVEL FRAME" to the name of your game
         final JFrame frame = new JFrame("Tetris");
-        frame.setPreferredSize(new Dimension(600, 830));
+        frame.setPreferredSize(new Dimension(600, 850));
         frame.setResizable(false);
 
         // panel that holds all of the info about the game
@@ -51,7 +50,7 @@ public class Game implements Runnable {
         score.setHorizontalAlignment(JLabel.LEFT);
 
         final JLabel lines = new JLabel("Lines Cleared: 0");
-        lines.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 25));
+        lines.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 30));
         lines.setForeground(Color.RED);
         lines.setHorizontalAlignment(JLabel.LEFT); 
 
@@ -176,7 +175,7 @@ public class Game implements Runnable {
 
         // constant values
         Dimension settingDim = new Dimension(100, 40);
-        Font settingFont = new Font("Calibri", Font.BOLD, 30);
+        Font settingFont = new Font("Open Sans", Font.BOLD, 22);
 
         // user checks this box if they want "garbage mode"
         final JCheckBox garbageMode = new JCheckBox("Garbage Mode");
@@ -242,8 +241,9 @@ public class Game implements Runnable {
         final JPanel gamePanel = new JPanel();
 
         gamePanel.add(court);
-        gamePanel.setBackground(new Color(20, 60, 50));
-
+        gamePanel.setBackground(new Color(130, 200, 130));
+        gamePanel.setBorder(BorderFactory.createLoweredBevelBorder());
+        
         // starts new game with desired settings
         final JButton newGame = new JButton("New Game");
         newGame.addActionListener(new ActionListener() {
@@ -252,7 +252,7 @@ public class Game implements Runnable {
                 court.setVisible(true);
                 game_info_panel.setVisible(true);
                 court.reset();
-                
+                court.playing = true;
                 court.shadow = shadowTile.isSelected();
                 try {
                     levelField.commitEdit();
@@ -295,14 +295,14 @@ public class Game implements Runnable {
         buttons.add(instructions);
 
         // title panel of game
-        final JLabel title = new JLabel("TETRIS!");
+        final JLabel title = new JLabel("");
+        title.setIcon(new ImageIcon ("title.jpg"));
         title.setHorizontalAlignment(JLabel.CENTER);
         title.setForeground(new Color(0, 238, 255));
-        title.setBackground(new Color(20, 60, 50));
+        title.setBackground(new Color(60, 60, 130));
         title.setOpaque(true);
         title.setFont(new Font("AR DESTINE", Font.BOLD, 150));
-        title.setPreferredSize(new Dimension(100, 130));
-
+        title.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createRaisedBevelBorder(), BorderFactory.createRaisedBevelBorder()));
         // adds everything needed to frame in correct spot
         frame.add(buttons, BorderLayout.LINE_START);
         frame.add(title, BorderLayout.NORTH);
